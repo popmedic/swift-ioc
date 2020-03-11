@@ -1,28 +1,28 @@
 import XCTest
 @testable import IoC
 
-private protocol Instantiable {
-    associatedtype Instantiate
-    static var instantiate: Instantiate { get }
+private protocol Factoriable {
+    associatedtype Factory
+    static var factory: Factory { get }
 }
 
 private protocol Protocol {
     var value: Int { get set }
 }
 
-private struct Struct: Protocol, Instantiable {
+private struct Struct: Protocol, Factoriable {
     var value: Int
-    typealias Instantiate = (Int) -> Protocol
+    typealias Factory = (Int) -> Protocol
     
-    static var instantiate: Instantiate {
+    static var factory: Factory {
         return Struct.init
     }
 }
 
-private class Class: Protocol, Instantiable {
-    typealias Instantiate = () -> Protocol
+private class Class: Protocol, Factoriable {
+    typealias Factory = () -> Protocol
 
-    static var instantiate: Instantiate { Class.init }
+    static var factory: Factory { Class.init }
     var value: Int = 0
 }
 
@@ -73,11 +73,19 @@ final class IoCTests: XCTestCase {
         XCTAssertEqual(got.value, exp.value)
     }
     
-    func testInstantiable() {
-        ioc.set(Struct.instantiate)
-        ioc.set(Class.instantiate)
-        let structInstantiate: Struct.Instantiate = ioc.get()!
-        let classInstantiante: Class.Instantiate = ioc.get()!
+    func testSetIndexed() {
+        let exp = Struct(value: 10)
+        ioc.set(Struct(value: 9))
+        ioc.set(exp, index: 0)
+        let got: Struct = ioc.get()!
+        XCTAssertEqual(got.value, exp.value)
+    }
+    
+    func testFactoriable() {
+        ioc.set(Struct.factory)
+        ioc.set(Class.factory)
+        let structInstantiate: Struct.Factory = ioc.get()!
+        let classInstantiante: Class.Factory = ioc.get()!
         let `struct` = structInstantiate(10) as! Struct
         let `class` = classInstantiante() as! Class
         `class`.value = 10
@@ -106,8 +114,8 @@ final class IoCTests: XCTestCase {
             let stringValue: String? = self.ioc.get()
             XCTAssertNotNil(stringValue)
             
-            self.ioc.set(Class.instantiate)
-            let classInstantiate: Class.Instantiate = self.ioc.get()!
+            self.ioc.set(Class.factory)
+            let classInstantiate: Class.Factory = self.ioc.get()!
             
             var cls = classInstantiate()
             cls.value = index
@@ -141,13 +149,14 @@ final class IoCTests: XCTestCase {
     }
 
     static var allTests = [
-        ("testNil", testNil),
-        ("testInt", testInt),
-        ("testValue", testValue),
-        ("testClass", testClass),
-        ("testStruct", testStruct),
-        ("testInstantiable", testInstantiable),
-        ("testAll", testAll),
-        ("testThreaded", testThreaded),
+        ("test trying to set a nil value", testNil),
+        ("test setting an Int", testInt),
+        ("test a value type", testValue),
+        ("test a class type", testClass),
+        ("test a struct type", testStruct),
+        ("test setting with an index", testSetIndexed),
+        ("test the factories", testFactoriable),
+        ("test all of the types", testAll),
+        ("test all of the types threading it a bunch", testThreaded),
     ]
 }
