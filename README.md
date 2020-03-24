@@ -1,4 +1,4 @@
-# swift-injector
+# swift-ioc
 
 swift-injector is an Inverstion of Control class for managing dependencies.  This container can be used to store objects and functions that can then be used for dependency management and invert the control.
 
